@@ -73,44 +73,6 @@ ORDER BY LastName, FirstName, CustomerID
 
 
 --EX 6
-WITH CTE_OrderTotals 
-AS 
-(
-SELECT YEAR(oh.OrderDate) AS Year, oh.SalesOrderID, c.CustomerID,
-SUM(od.UnitPrice * (1 - od.UnitPriceDiscount) * od.OrderQty) AS Total
-FROM Sales.SalesOrderDetail od
-JOIN Sales.SalesOrderHeader oh 
-ON od.SalesOrderID = oh.SalesOrderID
-JOIN Sales.Customer c
-ON oh.CustomerID = c.CustomerID
-GROUP BY YEAR(oh.OrderDate), oh.SalesOrderID, c.CustomerID
-),
----------------------
-CTE_RankedOrders 
-AS 
-(
-SELECT ot.Year, ot.SalesOrderID, ot.CustomerID, ot.Total,
-RANK() OVER(PARTITION BY ot.Year ORDER BY ot.Total DESC) AS Rank
-FROM CTE_OrderTotals AS ot
-),
-----------------------
-CTE_CustomerDetails 
-AS 
-(
-SELECT ro.Year, ro.SalesOrderID, ro.Total, p.FirstName, p.LastName
-FROM CTE_RankedOrders AS ro
-JOIN Sales.Customer c 
-ON ro.CustomerID = c.CustomerID
-JOIN Person.Person p 
-ON c.PersonID = p.BusinessEntityID
-WHERE ro.Rank = 1
-)
-------------------------
-SELECT cd.Year, cd.SalesOrderID, cd.FirstName, cd.LastName, cd.Total
-FROM CTE_CustomerDetails  AS cd
-ORDER BY cd.Year;
-
------------can do it shorter----------
 WITH CTE_MaxOrder
 AS
 (SELECT YEAR(s.OrderDate) as "Year",
@@ -127,11 +89,6 @@ GROUP BY YEAR(s.OrderDate), s.SalesOrderID, p.LastName, p.FirstName, s.CustomerI
 SELECT  Year, SalesOrderID, LastName, FirstName, Total
 FROM CTE_MaxOrder
 WHERE RowNum = 1
-
-
-
-
-
 
 --EX 7
 WITH CTE_years 
